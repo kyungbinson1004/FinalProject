@@ -4,17 +4,134 @@
  */
 package doublependulum;
 
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import static javax.swing.JFrame.EXIT_ON_CLOSE;
+
 /**
  *
  * @author Kyungbin
  */
 public class Selection extends javax.swing.JFrame {
-
-    /**
-     * Creates new form Selection
-     */
+    static int xStart = 350;
+    static  int yStart = 150;
+    static double l1 = 150; 
+    static double l2 = 150;
+    static double m1 = 30;
+    static double m2 = 30;
+    static double angle1= Math.PI/2; 
+    static double angle2 = Math.PI/2; 
+    static double angle1Vel = 0;
+    static double angle2Vel = 0;
+    static double g = 1;
+    static Weight weight1 = new Weight(l1,angle1);
+    static Weight weight2 = new Weight(l2,angle2);
+    static ArrayList<Integer> array = new ArrayList<>();
+    static ArrayList<Double> weight1Acc = new ArrayList<>();
+    static ArrayList<Double> weight2Acc = new ArrayList<>();
+    static int time; 
+    
     public Selection() {
         initComponents();
+    }
+    
+     public void paint ( Graphics g){ 
+       Image image = createImage();
+       g.drawImage(image, 0, 0, this);
+       g.setColor(Color.yellow);
+      
+      
+        
+    }
+     
+      public static void updateAngle(int numG){
+        
+        
+        
+        double num1 = -g * (2* m1 + m2)*Math.sin(angle1);
+        double num2 = - m2*g*Math.sin(angle1-2*angle2);
+        double num3 = -2*Math.sin(angle1-angle2)*m2;
+        double num4 = angle2Vel*angle2Vel*l2 + angle1Vel * angle1Vel* l1*Math.cos(angle1-angle2);
+        
+        double den = l1* (2*m1 + m2- m2*Math.cos(2*angle1 - 2*angle2));
+
+        weight1.acceleration = (num1+num2+num3*num4) / den;
+        
+        double num12 = 2* Math.sin(angle1 - angle2);
+        double num22 = (angle1Vel*angle1Vel*l1*(m1+m2));
+        double num32 = g* (m1+ m2) * Math.cos(angle1);
+        double num42 = angle2Vel * angle2Vel * l2 * m2* Math.cos(angle1-angle2);
+        double den2 = l2* (2*m1 + m2- m2*Math.cos(2*angle1 - 2*angle2));
+        
+        weight2.acceleration = (num12 * (num22+num32+num42)) / den2 ;
+        
+        angle1Vel = angle1Vel + weight1.acceleration;
+        angle2Vel = angle2Vel + weight2.acceleration;
+        angle1 = angle1 + angle1Vel; 
+        angle2= angle2 + angle2Vel;
+         Selection.weight1Acc.add(angle1);
+         Selection.weight2Acc.add(angle2);
+        System.out.println("hi");
+        
+        if (numG >1 ){
+            
+            updateAngle(numG-1);
+        }
+        
+        
+       
+    }
+    
+      static Image createImage(){
+        
+        
+        BufferedImage bufferedImage = new BufferedImage(700, 700, BufferedImage.TYPE_INT_RGB);
+
+        
+        
+        double x1 = xStart + l1* Math.sin(weight1Acc.get(time));
+        double y1 =  yStart + l1* Math.cos(weight1Acc.get(time));
+
+        //took out x1,
+//        x1 = x1+ l2 * Math.sin(weight1Acc.get(time));
+//        y1 = y1+ l2 * Math.cos(weight1Acc.get(time));
+        
+        weight1.x2 = x1 + l2 * Math.sin(weight2Acc.get(time));
+        weight1.y2 = y1+ l2 * Math.cos(weight2Acc.get(time));
+        int padding = 15;
+        
+        Graphics2D g = (Graphics2D) bufferedImage.getGraphics();
+        g.setColor(Color.pink);
+
+        g.drawLine(xStart, yStart, (int)x1, (int)y1);
+
+        g.drawOval((int)x1-padding-10, (int)y1-padding, (int)m1, (int)m1);
+        g.fillOval((int)x1-padding-10, (int)y1-padding, (int)m1, (int)m1);
+        
+        
+        g.drawLine((int)x1, (int)y1,(int) weight1.x2, (int)weight1.y2);
+        g.drawOval((int)weight1.x2-padding, (int)weight1.y2- padding, (int)m2, (int)m2);
+        g.fillOval((int)weight1.x2-padding, (int)weight1.y2-padding, (int)m2, (int)m2);
+        
+        
+        array.add((int)weight1.x2);
+        array.add((int)weight1.y2);
+        
+        g.setColor(Color.pink);
+         for(int i = 0; i < array.size()-1; i=i+2){
+           g.drawOval(array.get(i),array.get(i+1), 3,3);
+          g.fillOval(array.get(i), array.get(i+1), 3, 3);
+           
+       } 
+        //System.out.println(array);
+        return bufferedImage;
+        
+        
+        
     }
 
     /**
@@ -140,25 +257,47 @@ public class Selection extends javax.swing.JFrame {
     }//GEN-LAST:event_jSpinner3MouseClicked
 
     private void createButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_createButtonMouseClicked
-        int mass1 = (Integer) jSpinner4.getValue();
-        int mass2 = (Integer) jSpinner2.getValue();
-        int mass3 = (Integer) jSpinner1.getValue();
-        int mass4 = (Integer) jSpinner5.getValue();
-        String color = (String) jSpinner3.getValue();
-        System.out.println(mass1 + " " + mass2 + " " + mass3 + " " + mass4 + " "+ color );
-        dispose();
-        new DoublePendulum().setVisible(true);
+       
+        Selection dp = new Selection();
+
+        //new DoublePendulum().setVisible(false);
         
+        dp.setDefaultCloseOperation(EXIT_ON_CLOSE);
+        dp.setTitle("Double Pendulum");
+        dp.setBackground(Color.blue);
+        dp.setSize(700, 700);
         
+        int numFrames = 1000;
+        Selection.updateAngle(numFrames);
+        System.out.println(Selection.weight1Acc);
+        System.out.println(Selection.weight2Acc);
+        //while (true){
+            for (int j = 0; j < numFrames; j++){
+                Selection.time = j;
+                dp.repaint();
+
+            sleep(19);
+           // }
+            
+            
+        }
         
+    
         
     }//GEN-LAST:event_createButtonMouseClicked
-
+ public static void sleep( int duration ) {
+        try {
+              Thread.sleep( duration );
+            }
+        catch (Exception e) {
+            }
+    }
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
+                OpeningScreen s = new OpeningScreen();
+                s.setVisible(true);
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
@@ -184,7 +323,10 @@ public class Selection extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Selection().setVisible(true);
+               new Selection().setVisible(true);
+                        
+    
+                
             }
         });
     }
@@ -198,4 +340,7 @@ public class Selection extends javax.swing.JFrame {
     public javax.swing.JSpinner jSpinner4;
     public javax.swing.JSpinner jSpinner5;
     // End of variables declaration//GEN-END:variables
+
+    
+  
 }
